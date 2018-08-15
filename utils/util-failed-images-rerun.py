@@ -60,25 +60,39 @@ def read_failed_images(directory):
 
 def remove_record(image_ids, sqldb, databasename):
     newname=str(databasename)
-    newdatabase=copyfile(sqldb,newname)
+    copyfile(sqldb,newname)
+    newdatabase=newname
     con = sq.connect(newdatabase)
+    con.text_factory = str
     cursor = con.cursor()
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
     tables = cursor.fetchall()
+    print(tables)
     con.close()
     tables1= [x for x in tables if 'runinfo' not in x]
+    tables1= [x for x in tables1 if 'analysis_images' not in x]
     for x in tables1:
-        for y in image_ids:
-            x=str(x)
-            x1=re.sub(r'\W+', '', x)
-            query= "DELETE from " + str(x1)+ " where image_id=" + str(y)
-            message="Currently deleting image_id="+str(y)+" from "+str(x1)
-            print(message)
-            con=sq.connect(newdatabase)
-            cursor = con.cursor()
-            cursor.execute(query)
-            con.commit()
-            con.close()
+        x = str(x)
+        x1 = re.sub(r'\W+', '', x)
+        count = "SELECT count(*) from "+str(x1)
+        con = sq.connect(newdatabase)
+        cursor = con.cursor()
+        cursor.execute(count)
+        tablecount=cursor.fetchall()
+        tablecount1 = re.sub(r'\W+', '', str(tablecount))
+        tablecount1=(int(tablecount1))
+        if tablecount1==0:
+            pass
+        else:
+            for y in image_ids:
+                query= "DELETE from " + str(x1)+ " where image_id=" + str(y)
+                message="Currently deleting image_id="+str(y)+" from "+str(x1)
+                print(message)
+                con=sq.connect(newdatabase)
+                cursor = con.cursor()
+                cursor.execute(query)
+                con.commit()
+                con.close()
     return databasename
 
 def create_jobfile(image_info, databasename,jobbase, outdir):
@@ -141,8 +155,8 @@ def main():
     args = options()
 
     image_ids,img_info = read_failed_images(args.directory)
-    pathdatabase = remove_record(image_ids,args.database, args.databasename)
-    create_jobfile(img_info,pathdatabase,args.job, args.outdir)
+    newdatabasepath=remove_record(image_ids,args.database, args.databasename)
+    create_jobfile(img_info,args.databasename,args.job, args.outdir)
 
 if __name__ == '__main__':
     main()
