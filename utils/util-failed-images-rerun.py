@@ -101,6 +101,7 @@ def create_jobfile(image_info, databasename,jobbase, outdir):
     cursor.execute("SELECT * FROM 'runinfo';")
     tables = cursor.fetchall()
     con.close()
+    currentime = datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
     for i,x in enumerate(tables):
         timestamp=x[1]
         command=x[2]
@@ -110,7 +111,6 @@ def create_jobfile(image_info, databasename,jobbase, outdir):
         exe =command_split[0]
         jobname=str(jobbase)+"_"+str(i)+".job"
         jobfile = open(jobname, 'w')
-        currentime = datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
         resultsdir=str(outdir)+"/"+str(currentime)+"_rerun"
 
         if os.path.exists(outdir)==False:
@@ -154,8 +154,15 @@ def main():
     # Get options
     args = options()
 
+    # This step finds the image_ids of the failed images, and the paths of the failed images
     image_ids,img_info = read_failed_images(args.directory)
-    newdatabasepath=remove_record(image_ids,args.database, args.databasename)
+
+    # This step can be slow depending on how many records need to be deleted, if you've already run this step it is
+    # best to turn it off, if you just need to modify the created jobfiles.
+
+    #newdatabasepath=remove_record(image_ids,args.database, args.databasename)
+
+    # This step creates new job files for each run command (see runinfo table in the database).
     create_jobfile(img_info,args.databasename,args.job, args.outdir)
 
 if __name__ == '__main__':
