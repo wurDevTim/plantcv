@@ -72,18 +72,27 @@ def remove_record(image_ids, sqldb, databasename):
     tables1= [x for x in tables if 'runinfo' not in x]
     tables1= [x for x in tables1 if 'analysis_images' not in x]
     for x in tables1:
-        for y in image_ids:
-            x=str(x)
-            x1=re.sub(r'\W+', '', x)
-            print(x1)
-            query= "DELETE from " + str(x1)+ " where image_id=" + str(y)
-            message="Currently deleting image_id="+str(y)+" from "+str(x1)
-            print(message)
-            con=sq.connect(newdatabase)
-            cursor = con.cursor()
-            cursor.execute(query)
-            con.commit()
-            con.close()
+        x = str(x)
+        x1 = re.sub(r'\W+', '', x)
+        count = "SELECT count(*) from "+str(x1)
+        con = sq.connect(newdatabase)
+        cursor = con.cursor()
+        cursor.execute(count)
+        tablecount=cursor.fetchall()
+        tablecount1 = re.sub(r'\W+', '', str(tablecount))
+        tablecount1=(int(tablecount1))
+        if tablecount1==0:
+            pass
+        else:
+            for y in image_ids:
+                query= "DELETE from " + str(x1)+ " where image_id=" + str(y)
+                message="Currently deleting image_id="+str(y)+" from "+str(x1)
+                print(message)
+                con=sq.connect(newdatabase)
+                cursor = con.cursor()
+                cursor.execute(query)
+                con.commit()
+                con.close()
     return databasename
 
 def create_jobfile(image_info, databasename,jobbase, outdir):
