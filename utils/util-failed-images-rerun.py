@@ -58,7 +58,20 @@ def read_failed_images(directory):
     return image_ids, image_info
 
 
-def remove_record(image_ids, sqldb, databasename):
+def remove_record(image_ids, image_info, sqldb, databasename,outdir):
+
+    # Create results folder and make sure that outdir exists, if not, make it
+    currentime = datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
+
+    resultsdir = str(outdir) + "/" + str(currentime) + "_rerun"
+
+    if os.path.exists(outdir) == False:
+        os.mkdir(outdir)
+
+    if os.path.exists(resultsdir) == False:
+        os.mkdir(resultsdir)
+
+    # Copy database and get tables
     newname=str(databasename)
     copyfile(sqldb,newname)
     newdatabase=newname
@@ -67,10 +80,10 @@ def remove_record(image_ids, sqldb, databasename):
     cursor = con.cursor()
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
     tables = cursor.fetchall()
-    print(tables)
     con.close()
     tables1= [x for x in tables if 'runinfo' not in x]
     tables1= [x for x in tables1 if 'analysis_images' not in x]
+
     for x in tables1:
         x = str(x)
         x1 = re.sub(r'\W+', '', x)
@@ -84,6 +97,30 @@ def remove_record(image_ids, sqldb, databasename):
         if tablecount1==0:
             pass
         else:
+            if x1 == 'metadata':
+                con = sq.connect(newdatabase)
+                for y in image_ids:
+                    query= "Select * from " + str(x1)+ " where image_id=" + str(y)
+                    cursor = con.cursor()
+                    cursor.execute(query)
+                    metainfo = cursor.fetchall()
+                    metainfo1 = list(metainfo[0])
+                    headers=list(map(lambda x: x[0], cursor.description))
+                    imagename="Select image from " + str(x1)+ " where image_id=" + str(y)
+                    cursor.execute(imagename)
+                    name = cursor.fetchall()
+                    imgpath_split=str(name[0]).split("/")
+                    name1 = re.sub(r'\W+', '', str(imgpath_split[-1]))
+                    result_name = name1[:-3] + "_rerun.txt"
+                    result_path = str(resultsdir) + "/" + result_name
+                    result_file = open(result_path, 'w')
+                    for i,x in enumerate(metainfo1):
+                        result_file.write('META\t')
+                        result_file.write(''+headers[i]+'\t')
+                        result_file.write(''+str(metainfo1[i])+'\t\n')
+                    result_file.close()
+                con.close()
+
             for y in image_ids:
                 query= "DELETE from " + str(x1)+ " where image_id=" + str(y)
                 message="Currently deleting image_id="+str(y)+" from "+str(x1)
@@ -93,15 +130,14 @@ def remove_record(image_ids, sqldb, databasename):
                 cursor.execute(query)
                 con.commit()
                 con.close()
-    return databasename
+    return resultsdir
 
-def create_jobfile(image_info, databasename,jobbase, outdir):
+def create_jobfile(image_info, databasename,jobbase, resultsdir):
     con = sq.connect(databasename)
     cursor = con.cursor()
     cursor.execute("SELECT * FROM 'runinfo';")
     tables = cursor.fetchall()
     con.close()
-    currentime = datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
     for i,x in enumerate(tables):
         timestamp=x[1]
         command=x[2]
@@ -111,13 +147,6 @@ def create_jobfile(image_info, databasename,jobbase, outdir):
         exe =command_split[0]
         jobname=str(jobbase)+"_"+str(i)+".job"
         jobfile = open(jobname, 'w')
-        resultsdir=str(outdir)+"/"+str(currentime)+"_rerun"
-
-        if os.path.exists(outdir)==False:
-            os.mkdir(outdir)
-
-        if os.path.exists(resultsdir)==False:
-            os.mkdir(resultsdir)
 
         # get indices of images that match run time
         image_array=np.asarray(image_info)
@@ -128,7 +157,7 @@ def create_jobfile(image_info, databasename,jobbase, outdir):
             image_path=line[0]
             result_name=image_path.split("/")[-1][:-4]+"_rerun.txt"
             result_path=str(resultsdir)+"/"+result_name
-            argstr = (str(pipeline) + " -i " + str(image_path) + " -o " + str(outdir)) + " -w -r "+str(result_path)
+            argstr = (str(pipeline) + " -i " + str(image_path) + " -o " + str(resultsdir)) + " -w -r "+str(result_path)
 
             jobfile.write('####################\n')
             jobfile.write('# HTCondor job description file\n')
@@ -155,15 +184,15 @@ def main():
     args = options()
 
     # This step finds the image_ids of the failed images, and the paths of the failed images
-    image_ids,img_info = read_failed_images(args.directory)
+    img_ids,img_info = read_failed_images(args.directory)
 
     # This step can be slow depending on how many records need to be deleted, if you've already run this step it is
     # best to turn it off, if you just need to modify the created jobfiles.
 
-    #newdatabasepath=remove_record(image_ids,args.database, args.databasename)
+    outfolder=remove_record(img_ids, img_info, args.database, args.databasename,args.outdir)
 
     # This step creates new job files for each run command (see runinfo table in the database).
-    create_jobfile(img_info,args.databasename,args.job, args.outdir)
+    create_jobfile(img_info,args.databasename,args.job, outfolder)
 
 if __name__ == '__main__':
     main()
