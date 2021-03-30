@@ -3,7 +3,8 @@
 import os
 import cv2
 import numpy as np
-from plantcv.plantcv._debug import _debug
+from plantcv.plantcv import plot_image
+from plantcv.plantcv import print_image
 from plantcv.plantcv import params
 
 
@@ -44,5 +45,12 @@ def crop(img, x, y, h, w):
 
     ref_img = cv2.rectangle(img=ref_img, pt1=pt1, pt2=pt2, color=(255, 0, 0), thickness=params.line_thickness)
 
-    _debug(visual=ref_img, filename=os.path.join(params.debug_outdir, str(params.device) + "_crop.png"))
+    if params.debug == "print":
+        # If debug is print, save the image to a file
+        print_image(ref_img, os.path.join(params.debug_outdir, str(params.device) + "_crop.png"))
+    elif params.debug == "plot":
+        # If debug is plot, print to the plotting device
+        plot_image(ref_img)
+
+    
     return cropped
