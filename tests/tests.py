@@ -944,6 +944,7 @@ TEST_THERMAL_ARRAY = "thermal_img.npz"
 TEST_THERMAL_IMG_MASK = "thermal_img_mask.png"
 TEST_INPUT_THERMAL_CSV = "FLIR2600.csv"
 PIXEL_VALUES = "pixel_inspector_rgb_values.txt"
+TEST_DISCS_MASK = 'discs_binary.png'
 
 
 # ##########################
@@ -3699,6 +3700,16 @@ def test_plantcv_spatial_clustering_badinput():
     pcv.params.debug = None
     with pytest.raises(NameError):
         _ = pcv.spatial_clustering(img, algorithm="Hydra", min_cluster_size=5, max_distance=100)
+
+def test_detect_discs():
+    # Read in test data
+    mask = cv2.imread(os.path.join(TEST_DATA, TEST_DISCS_MASK), -1)
+
+    # Test with debug = None
+    pcv.params.debug = None
+    _,coor = pcv.detect_discs(bin_img=mask, ecc_thresh=0.3)
+
+    assert len(coor) == 3
 
 
 # ##############################
