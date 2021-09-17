@@ -6433,7 +6433,7 @@ def test_plantcv_visualize_click_count():
     assert len(counter.events) == 4
 
     
-    @pytest.mark.parametrize("num,expected", [[100, 35], [30, 33]])
+@pytest.mark.parametrize("num,expected", [[100, 35], [30, 33]])
 def test_plantcv_visualize_size(num, expected):
     pcv.params.debug = None
     img = cv2.imread(os.path.join(TEST_DATA, TEST_INPUT_LEAF_MASK), -1)
