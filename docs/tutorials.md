@@ -343,7 +343,7 @@
         <span><strong>Tags</strong>: seed, seed analysis, human-in-the-loop, RGB, seed count, camilina</span>
     </div>
     <div class="card-button">
-        <a href="https://mybinder.org/v2/gh/danforthcenterplantcv-interactive-tutorials/HEAD?filepath=index.ipynb"><img src="https://mybinder.org/badge_logo.svg"></a>
+        <a href="https://mybinder.org/v2/gh/danforthcenter/plantcv-interactive-tutorials/HEAD?filepath=index.ipynb"><img src="https://mybinder.org/badge_logo.svg"></a>
 
       
 <!--Homology Tutorial-->
