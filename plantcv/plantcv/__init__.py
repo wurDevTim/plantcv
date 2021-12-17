@@ -3,6 +3,8 @@ from plantcv.plantcv.classes import Params
 from plantcv.plantcv.classes import Outputs
 from plantcv.plantcv.classes import Spectral_data
 from plantcv.plantcv.classes import PSII_data
+from plantcv.plantcv.classes import Points
+
 # Initialize an instance of the Params and Outputs class with default values
 # params and outputs are available when plantcv is imported
 params = Params()
@@ -85,16 +87,16 @@ from plantcv.plantcv.crop import crop
 from plantcv.plantcv.stdev_filter import stdev_filter
 from plantcv.plantcv.spatial_clustering import spatial_clustering
 from plantcv.plantcv import photosynthesis
+from plantcv.plantcv import annotate
 from plantcv.plantcv.detect_discs import detect_discs
-from plantcv.plantcv.get_centroids import get_centroids
-# add new functions to end of lists
+from plantcv.plantcv.get_centroids import get_centroids# add new functions to end of lists
 
 # Auto versioning
 from ._version import get_versions
 __version__ = get_versions()['version']
 del get_versions
 
-__all__ = ['fatal_error', 'Params', 'Outputs', 'Spectral_data', 'PSII_data', 'deprecation_warning', 'print_image', 
+__all__ = ['fatal_error', 'Params', 'Outputs', 'Spectral_data', 'PSII_data', 'Points', 'deprecation_warning', 'print_image',
            'plot_image', 'color_palette', 'apply_mask', 'gaussian_blur', 'transform', 'hyperspectral', 'readimage', 'readbayer',
            'laplace_filter', 'sobel_filter', 'scharr_filter', 'hist_equalization', 'erode', 'image_add', 
            'image_subtract', 'dilate', 'watershed', 'rectangle_mask', 'rgb2gray_hsv', 'rgb2gray_lab', 'rgb2gray_cmyk',
@@ -109,5 +111,6 @@ __all__ = ['fatal_error', 'Params', 'Outputs', 'Spectral_data', 'PSII_data', 'de
            'cluster_contour_mask', 'analyze_thermal_values', 'opening',
            'closing', 'within_frame', 'fill_holes', 'get_kernel', 'crop', 'stdev_filter',
            'spatial_clustering', 'photosynthesis', 'homology', 'detect_discs',
-           'get_centroids']
+           'get_centroids', 'annotate']
+
 
