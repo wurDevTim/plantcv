@@ -9,12 +9,15 @@ from plantcv.plantcv import Spectral_data
 from skimage.util import img_as_ubyte
 
 
-def read_cropreporter(filename):
+
+
+def read_cropreporter(container_client, kwargs):
     """
     Read datacubes from PhenoVation B.V. CropReporter into a PSII_Data instance.
 
     Inputs:
-        filename        = CropReporter .INF filename
+        container_client = Azure Container client
+        kwargs        = dictionary with cropreporter azure paths
 
     Returns:
         ps               = photosynthesis data in xarray DataArray format
@@ -26,54 +29,60 @@ def read_cropreporter(filename):
     metadata_dict = {}
 
     # Parse .inf file and create dictionary with metadata stored within
-    with open(filename, "r") as fp:
-        for line in fp:
-            if "=" in line:
-                key, value = line.rstrip("\n").split("=")
-                metadata_dict[key] = value
+    blob_client = container_client.get_blob_client(kwargs['hdr_blob_name'])
+    stream = blob_client.download_blob(encoding='UTF-8')
+    buffer = stream.readall().splitlines()
+    for line in buffer:
+        if "=" in line:
+            key, value = line.rstrip("\n").split("=")
+            metadata_dict[key] = value
 
     # Initialize PSII_data class
     ps = PSII_data()
 
     # INF file prefix and path
-    ps.filename = os.path.split(filename)[-1]
-    ps.datapath = os.path.dirname(filename)
+    #ps.filename = os.path.split(kwargs['hdr_blob_name'])[-1]
+    #ps.datapath = os.path.dirname(kwargs['hdr_blob_name'])
 
     # Dark-adapted measurements
-    _process_psd_data(ps=ps, metadata=metadata_dict)
+    _process_psd_data(ps=ps, metadata=metadata_dict, container_client=container_client, kwargs=kwargs)
 
     # Light-adapted measurements
-    _process_psl_data(ps=ps, metadata=metadata_dict)
+    _process_psl_data(ps=ps, metadata=metadata_dict, container_client=container_client, kwargs=kwargs)
 
     # Dark-adapted PAM measurements
-    _process_pmd_data(ps=ps, metadata=metadata_dict)
+    _process_pmd_data(ps=ps, metadata=metadata_dict, container_client=container_client, kwargs=kwargs)
 
     # Light-adapted PAM Pmeasurements
-    _process_pml_data(ps=ps, metadata=metadata_dict)
+    _process_pml_data(ps=ps, metadata=metadata_dict, container_client=container_client, kwargs=kwargs)
 
     # Chlorophyll fluorescence data
-    _process_chl_data(ps=ps, metadata=metadata_dict)
+    _process_chl_data(ps=ps, metadata=metadata_dict, container_client=container_client, kwargs=kwargs)
 
     # Spectral measurements
-    _process_spc_data(ps=ps, metadata=metadata_dict)
+    _process_spc_data(ps=ps, metadata=metadata_dict, container_client=container_client, kwargs=kwargs)
 
     return ps
 
 
-def _process_psd_data(ps, metadata):
+def _process_psd_data(ps, metadata, container_client, kwargs):
     """
     Create an xarray DataArray for a PSD dataset.
 
     Inputs:
         ps       = PSII_data instance
         metadata = INF file metadata dictionary
+        container_client = Azure Container client
+        kwargs = dictionary with blob paths
 
     :param ps: plantcv.plantcv.classes.PSII_data
     :param metadata: dict
     """
-    bin_filepath = _dat_filepath(dataset="PSD", datapath=ps.datapath, filename=ps.filename)
-    if os.path.exists(bin_filepath):
-        img_cube, frame_labels, frame_nums = _read_dat_file(dataset="PSD", filename=bin_filepath,
+    
+    if 'psd_blob_name' in kwargs:
+        img_cube, frame_labels, frame_nums = _read_dat_file(dataset="PSD",
+                                                            container_client=container_client,
+                                                            blob_path=kwargs['psd_blob_name'],
                                                             height=int(metadata["ImageRows"]),
                                                             width=int(metadata["ImageCols"]))
         # If not all frames are saved the order is fixed
@@ -109,20 +118,23 @@ def _process_psd_data(ps, metadata):
                col_wrap=int(np.ceil(ps.ojip_dark.frame_label.size / 4)))
 
 
-def _process_psl_data(ps, metadata):
+def _process_psl_data(ps, metadata, container_client, kwargs):
     """
     Create an xarray DataArray for a PSL dataset.
 
     Inputs:
         ps       = PSII_data instance
         metadata = INF file metadata dictionary
+        container_client = Azure Container client
+        kwargs = dictionary with blob paths
 
     :param ps: plantcv.plantcv.classes.PSII_data
     :param metadata: dict
     """
-    bin_filepath = _dat_filepath(dataset="PSL", datapath=ps.datapath, filename=ps.filename)
-    if os.path.exists(bin_filepath):
-        img_cube, frame_labels, frame_nums = _read_dat_file(dataset="PSL", filename=bin_filepath,
+    if 'psl_blob_name' in kwargs:
+        img_cube, frame_labels, frame_nums = _read_dat_file(dataset="PSL",
+                                                            container_client=container_client,
+                                                            blob_path=kwargs['psl_blob_name'],
                                                             height=int(metadata["ImageRows"]),
                                                             width=int(metadata["ImageCols"]))
         # If not all frames are saved the order is fixed
@@ -158,20 +170,23 @@ def _process_psl_data(ps, metadata):
                col_wrap=int(np.ceil(ps.ojip_light.frame_label.size / 4)))
 
 
-def _process_pmd_data(ps, metadata):
+def _process_pmd_data(ps, metadata, container_client, kwargs):
     """
     Create an xarray DataArray for a PMD dataset.
 
     Inputs:
         ps       = PSII_data instance
         metadata = INF file metadata dictionary
+        container_client = Azure Container client
+        kwargs = dictionary with blob paths
 
     :param ps: plantcv.plantcv.classes.PSII_data
     :param metadata: dict
     """
-    bin_filepath = _dat_filepath(dataset="PMD", datapath=ps.datapath, filename=ps.filename)
-    if os.path.exists(bin_filepath):
-        img_cube, frame_labels, frame_nums = _read_dat_file(dataset="PMD", filename=bin_filepath,
+    if 'pmd_blob_name' in kwargs:
+        img_cube, frame_labels, frame_nums = _read_dat_file(dataset="PMD",
+                                                            container_client=container_client,
+                                                            blob_path=kwargs['pmd_blob_name'],
                                                             height=int(metadata["ImageRows"]),
                                                             width=int(metadata["ImageCols"]))
         frame_labels = ["Fdark", "F0", "Fm", "Fs"]
@@ -192,20 +207,23 @@ def _process_pmd_data(ps, metadata):
                col_wrap=int(np.ceil(ps.pam_dark.frame_label.size / 4)))
 
 
-def _process_pml_data(ps, metadata):
+def _process_pml_data(ps, metadata, container_client, kwargs):
     """
     Create an xarray DataArray for a PML dataset.
 
     Inputs:
         ps       = PSII_data instance
         metadata = INF file metadata dictionary
+        container_client = Azure Container client
+        kwargs = dictionary with blob paths
 
     :param ps: plantcv.plantcv.classes.PSII_data
     :param metadata: dict
     """
-    bin_filepath = _dat_filepath(dataset="PML", datapath=ps.datapath, filename=ps.filename)
-    if os.path.exists(bin_filepath):
-        img_cube, frame_labels, frame_nums = _read_dat_file(dataset="PML", filename=bin_filepath,
+    if 'pml_blob_name' in kwargs:
+        img_cube, frame_labels, frame_nums = _read_dat_file(dataset="PML",
+                                                            container_client=container_client,
+                                                            blob_path=kwargs['pml_blob_name'],
                                                             height=int(metadata["ImageRows"]),
                                                             width=int(metadata["ImageCols"]))
         frame_labels = ["Flight", "Fp", "Fmp", "Fs"]
@@ -226,20 +244,23 @@ def _process_pml_data(ps, metadata):
                col_wrap=int(np.ceil(ps.pam_light.frame_label.size / 4)))
 
 
-def _process_chl_data(ps, metadata):
+def _process_chl_data(ps, metadata, container_client, kwargs):
     """
     Create an xarray DataArray for a CHL dataset.
 
     Inputs:
         ps       = PSII_data instance
         metadata = INF file metadata dictionary
+        container_client = Azure Container client
+        kwargs = dictionary with blob paths
 
     :param ps: plantcv.plantcv.classes.PSII_data
     :param metadata: dict
     """
-    bin_filepath = _dat_filepath(dataset="CHL", datapath=ps.datapath, filename=ps.filename)
-    if os.path.exists(bin_filepath):
-        img_cube, frame_labels, _ = _read_dat_file(dataset="CHL", filename=bin_filepath,
+    if 'chl_blob_name' in kwargs:
+        img_cube, frame_labels, _ = _read_dat_file(dataset="CHL",
+                                                   container_client=container_client,
+                                                   blob_path=kwargs['chl_blob_name'],
                                                    height=int(metadata["ImageRows"]),
                                                    width=int(metadata["ImageCols"]))
         frame_labels = ["Fdark", "Chl"]
@@ -258,31 +279,35 @@ def _process_chl_data(ps, metadata):
                col_wrap=int(np.ceil(ps.chlorophyll.frame_label.size / 4)))
 
 
-def _process_spc_data(ps, metadata):
+def _process_spc_data(ps, metadata, container_client, kwargs):
     """
     Create a Spectral_data object for the SPC and CLR datasets.
 
     Inputs:
         ps       = PSII_data instance
         metadata = INF file metadata dictionary
+        container_client = Azure Container client
+        kwargs = dictionary with blob paths
 
     :param ps: plantcv.plantcv.classes.PSII_data
     :param metadata: dict
     """
     img_cubes = []
     wavelengths = []
-    clr_filepath = _dat_filepath(dataset="CLR", datapath=ps.datapath, filename=ps.filename)
-    spc_filepath = _dat_filepath(dataset="SPC", datapath=ps.datapath, filename=ps.filename)
     rgb = None
-    if os.path.exists(clr_filepath):
-        rgb_cube, _, _ = _read_dat_file(dataset="CLR", filename=clr_filepath,
+    if 'clr_blob_name' in kwargs:
+        rgb_cube, _, _ = _read_dat_file(dataset="CLR",
+                                        container_client=container_client,
+                                        blob_path=kwargs['clr_blob_name'],
                                         height=int(metadata["ImageRows"]),
                                         width=int(metadata["ImageCols"]))
         img_cubes.append(rgb_cube)
         wavelengths += [670, 500, 460]
         rgb = img_as_ubyte(rgb_cube[:, :, [2, 1, 0]])
-    if os.path.exists(spc_filepath):
-        spc_cube, _, _ = _read_dat_file(dataset="SPC", filename=spc_filepath,
+    if 'spc_blob_name' in kwargs:
+        spc_cube, _, _ = _read_dat_file(dataset="SPC",
+                                        container_client=container_client,
+                                        blob_path=kwargs['spc_blob_name'],
                                         height=int(metadata["ImageRows"]),
                                         width=int(metadata["ImageCols"]))
         img_cubes.append(spc_cube)
@@ -330,43 +355,44 @@ def _process_spc_data(ps, metadata):
                filename=os.path.join(params.debug_outdir, f"{str(params.device)}_spectral-RGB.png"))
 
 
-def _dat_filepath(dataset, datapath, filename):
-    """
-    Create the filepath to a DAT file based on the INF filename.
+# def _dat_filepath(dataset, datapath, filename):
+#     """
+#     Create the filepath to a DAT file based on the INF filename.
 
-    Inputs:
-        dataset  = dataset key (PSD, PSL, SPC, CHL, CLR)
-        datapath = path to the dataset (basepath of the INF file)
-        filename = INF filename
+#     Inputs:
+#         dataset  = dataset key (PSD, PSL, SPC, CHL, CLR)
+#         datapath = path to the dataset (basepath of the INF file)
+#         filename = INF filename
 
-    Returns:
-        bin_filepath = fully-qualified path to the DAT file
+#     Returns:
+#         bin_filepath = fully-qualified path to the DAT file
 
-    :param dataset: str
-    :param datapath: str
-    :param filename: str
-    :return bin_filepath: str
-    """
-    filename_components = filename.split("_")
-    # Find corresponding bin img filepath based on .INF filepath
-    # replace header with bin img type
-    filename_components[filename_components.index('HDR')] = dataset
-    bin_filenames = "_".join(filename_components)
-    bin_filename = bin_filenames.replace(".INF", ".DAT")
-    bin_filepath = os.path.join(datapath, bin_filename)
+#     :param dataset: str
+#     :param datapath: str
+#     :param filename: str
+#     :return bin_filepath: str
+#     """
+#     filename_components = filename.split("_")
+#     # Find corresponding bin img filepath based on .INF filepath
+#     # replace header with bin img type
+#     filename_components[filename_components.index('HDR')] = dataset
+#     bin_filenames = "_".join(filename_components)
+#     bin_filename = bin_filenames.replace(".INF", ".DAT")
+#     bin_filepath = os.path.join(datapath, bin_filename)
 
-    return bin_filepath
+#     return bin_filepath
 
 
-def _read_dat_file(dataset, filename, height, width):
+def _read_dat_file(dataset, container_client, blob_path, height, width):
     """
     Read raw data from DAT file.
 
     Inputs:
-        dataset  = dataset key (PSD, PSL, SPC, CHL, CLR)
-        filename = fully-qualified path to the DAT file
-        height   = height (rows) of the images
-        width    = width (columns) of the image
+        dataset          = dataset key (PSD, PSL, SPC, CHL, CLR)
+        container_client = azure container client
+        blob_path        = fully-qualified path to the DAT file
+        height           = height (rows) of the images
+        width            = width (columns) of the image
 
     Returns:
         img_cube     = raw data cube in NumPy shape
@@ -374,7 +400,8 @@ def _read_dat_file(dataset, filename, height, width):
         frame_nums   = the number of frames
 
     :param dataset: str
-    :param filename: str
+    :param container_client: Azure ContainerClient
+    :param blob_path: str
     :param height: int
     :param width: int
     :return img_cube: numpy.ndarray
@@ -383,7 +410,10 @@ def _read_dat_file(dataset, filename, height, width):
     """
     print(f'Compiling: {dataset}')
     # Dump in bin img data
-    raw_data = np.fromfile(filename, np.uint16, -1)
+    blob_client = container_client.get_blob_client(blob_path)
+    stream = blob_client.download_blob()
+    buffer = stream.readall()
+    raw_data = np.frombuffer(buffer, np.uint16, -1)
     # Reshape, numpy shaped
     img_cube = raw_data.reshape(int(len(raw_data) / (height * width)), width, height).transpose((2, 1, 0))
 

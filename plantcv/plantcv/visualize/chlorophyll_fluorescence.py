@@ -29,13 +29,13 @@ def chlorophyll_fluorescence(ps_da, labeled_mask, n_labels=1, label="object"):
 
     # Check that the dataarray is valid
     try:
-        if ps_da.name != "ojip_light" and ps_da.name != "ojip_dark":
-            fatal_error("You must provide a xarray DataArray with name ojip_light or ojip_dark")
+        if ps_da.name not in ["ojip_light", "ojip_dark", 'pam_light', 'pam_dark']:
+            fatal_error("You must provide a xarray DataArray with name ojip_light, ojip_dark, pam_light or pam_dark")
     except AttributeError:
         if isinstance(ps_da, PSII_data):
-            fatal_error("You need to provide the `ojip_dark` or `ojip_light` dataarray")
+            fatal_error("You need to provide the `ojip_dark`, `ojip_light`, 'pam_light' or 'pam_dark' dataarray")
         else:
-            fatal_error("You must provide a xarray DataArray with name ojip_light or ojip_dark")
+            fatal_error("You must provide a xarray DataArray with name ojip_light, ojip_dark, pam_light or pam_dark")
 
     # Prime is empty for Fv/Fm (dark- and light-adapted) and p for Fq'/Fm'
     datasets = {
@@ -46,6 +46,14 @@ def chlorophyll_fluorescence(ps_da, labeled_mask, n_labels=1, label="object"):
         "ojip_dark": {
             "prime": "",
             "label": "PSD"
+        },
+        "pam_light": {
+            "prime": "p",
+            "label": "PML"
+        },
+        "pam_dark": {
+            "prime": "",
+            "label": "PMD"
         }
     }
 

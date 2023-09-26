@@ -125,7 +125,8 @@ def yii(ps_da, labeled_mask, n_labels=1, auto_fm=False, measurement_labels=None,
            col_wrap=int(np.ceil(yii_global.measurement.size / 4)),
            vmin=0, vmax=1)
 
-    return yii_global.squeeze(), yii_chart
+    # return yii_global.squeeze(), yii_chart
+    return yii_global, yii_chart
 
 
 def _create_histogram(yii_img, mlabel):
