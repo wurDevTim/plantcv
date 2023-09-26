@@ -15,7 +15,4 @@ vl-convert-python
 #------------------
 azure-storage-blob
 azure-functions
-pandas
 azure-functions-durable
-opencv-python
-vl-convert-python
