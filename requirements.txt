@@ -12,7 +12,3 @@ xarray>=2022.11.0
 statsmodels
 altair
 vl-convert-python
-#------------------
-azure-storage-blob
-azure-functions
-azure-functions-durable
