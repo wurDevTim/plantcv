@@ -302,7 +302,7 @@ def _process_spc_data(ps, metadata, container_client, kwargs):
                                         height=int(metadata["ImageRows"]),
                                         width=int(metadata["ImageCols"]))
         img_cubes.append(rgb_cube)
-        wavelengths += [670, 500, 460]
+        wavelengths += [640, 550, 475]
         rgb = img_as_ubyte(rgb_cube[:, :, [2, 1, 0]])
     if 'spc_blob_name' in kwargs:
         spc_cube, _, _ = _read_dat_file(dataset="SPC",
@@ -311,7 +311,7 @@ def _process_spc_data(ps, metadata, container_client, kwargs):
                                         height=int(metadata["ImageRows"]),
                                         width=int(metadata["ImageCols"]))
         img_cubes.append(spc_cube)
-        wavelengths += [550, 700, 800]
+        wavelengths += [540, 710, 770]
         if rgb is None:
             rgb = img_as_ubyte(spc_cube)
 
