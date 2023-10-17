@@ -29,14 +29,14 @@ def ndvi(hsi, distance=20):
     :param distance: int
     :return index_array: __main__.Spectral_data
     """
-    if (float(hsi.max_wavelength) + distance) >= 800 and (float(hsi.min_wavelength) - distance) <= 670:
+    if (float(hsi.max_wavelength) + distance) >= 770 and (float(hsi.min_wavelength) - distance) <= 640:
         # Obtain index that best represents NIR and red bands
-        r800_index = _find_closest(np.array([float(i) for i in hsi.wavelength_dict.keys()]), 800)
-        r670_index = _find_closest(np.array([float(i) for i in hsi.wavelength_dict.keys()]), 670)
-        r800 = (hsi.array_data[:, :, r800_index])
-        r670 = (hsi.array_data[:, :, r670_index])
+        r770_index = _find_closest(np.array([float(i) for i in hsi.wavelength_dict.keys()]), 770)
+        r640_index = _find_closest(np.array([float(i) for i in hsi.wavelength_dict.keys()]), 640)
+        r770 = (hsi.array_data[:, :, r770_index])
+        r640 = (hsi.array_data[:, :, r640_index])
         # Naturally ranges from -1 to 1
-        index_array_raw = (r800 - r670) / (r800 + r670)
+        index_array_raw = (r770 - r640) / (r770 + r640)
         return _package_index(hsi=hsi, raw_index=index_array_raw, method="NDVI")
     fatal_error("Available wavelengths are not suitable for calculating NDVI. Try increasing distance.")
 
@@ -146,12 +146,12 @@ def ari(hsi, distance=20):
     :param distance: int
     :return index_array: __main__.Spectral_data
     """
-    if (float(hsi.max_wavelength) + distance) >= 700 and (float(hsi.min_wavelength) - distance) <= 550:
+    if (float(hsi.max_wavelength) + distance) >= 710 and (float(hsi.min_wavelength) - distance) <= 550:
         r550_index = _find_closest(np.array([float(i) for i in hsi.wavelength_dict.keys()]), 550)
-        r700_index = _find_closest(np.array([float(i) for i in hsi.wavelength_dict.keys()]), 700)
+        r710_index = _find_closest(np.array([float(i) for i in hsi.wavelength_dict.keys()]), 710)
         r550 = (hsi.array_data[:, :, r550_index])
-        r700 = (hsi.array_data[:, :, r700_index])
-        index_array_raw = (1 / r550) - (1 / r700)
+        r710 = (hsi.array_data[:, :, r710_index])
+        index_array_raw = (1 / r550) - (1 / r710)
         return _package_index(hsi=hsi, raw_index=index_array_raw, method="ARI")
     fatal_error("Available wavelengths are not suitable for calculating ARI. Try increasing distance.")
 
@@ -537,15 +537,15 @@ def psri(hsi, distance=20):
     :param distance: int
     :return index_array: __main__.Spectral_data
     """
-    if (float(hsi.max_wavelength) + distance) >= 750 and (float(hsi.min_wavelength) - distance) <= 500:
-        r500_index = _find_closest(np.array([float(i) for i in hsi.wavelength_dict.keys()]), 500)
-        r678_index = _find_closest(np.array([float(i) for i in hsi.wavelength_dict.keys()]), 678)
-        r750_index = _find_closest(np.array([float(i) for i in hsi.wavelength_dict.keys()]), 750)
-        r500 = (hsi.array_data[:, :, r500_index])
-        r678 = (hsi.array_data[:, :, r678_index])
-        r750 = (hsi.array_data[:, :, r750_index])
+    if (float(hsi.max_wavelength) + distance) >= 770 and (float(hsi.min_wavelength) - distance) <= 475:
+        r475_index = _find_closest(np.array([float(i) for i in hsi.wavelength_dict.keys()]), 475)
+        r640_index = _find_closest(np.array([float(i) for i in hsi.wavelength_dict.keys()]), 640)
+        r770_index = _find_closest(np.array([float(i) for i in hsi.wavelength_dict.keys()]), 770)
+        r475 = (hsi.array_data[:, :, r475_index])
+        r640 = (hsi.array_data[:, :, r640_index])
+        r770 = (hsi.array_data[:, :, r770_index])
         # Naturally ranges from -inf to inf
-        index_array_raw = (r678 - r500) / r750
+        index_array_raw = (r640 - r475) / r770
         return _package_index(hsi=hsi, raw_index=index_array_raw, method="PSRI")
     fatal_error("Available wavelengths are not suitable for calculating PSRI. Try increasing distance.")
 
